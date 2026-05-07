@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danh sách kiến nghị</title>
+    <link rel="stylesheet" href="styles.css?v=20260507-2100" />
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- Chatbot FPT AI -->
+    <script>
+      window.tovaAsyncInit = function() {
+        tova.init({
+          tenant_id: "01K0TMT7WP6RZDS7FAEFHNPJEC",
+          bot_code: "01KNR3A2E8KFCP96N8TS8HFHZK",
+          ui_config: {
+            position: "right",
+            hide_greeting: false
+          },
+          extra: {}
+        });
+      };
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "https://agents.fpt.ai/connect/sdk.js";
+        js.onload = window.tovaAsyncInit;
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, "script", "tova-jssdk"));
+    </script>
+
+    <script type="text/babel">
+      const { useState, useMemo } = React;
+
+      /* ─── DATA ─────────────────────────────────────────────── */
+      const DEPARTMENTS = [
+        "Sở KHCN TUYÊN QUANG", "Sở KHCN NINH BÌNH", "Sở KHCN ĐĂKLĂK",
+        "Sở KHCN THÁI NGUYÊN", "Sở KHCN QUẢNG NINH", "Sở KHCN ĐÀ NẴNG",
+        "Sở KHCN HÀ NAM",      "Sở KHCN BÌNH DƯƠNG",
+      ];
+      const TOPICS = ["Công tác tổng hợp", "Ứng dụng khoa học", "Đổi mới sáng tạo", "Chuyển đổi số"];
+      const REQUEST_TYPES = [
+        "Kiến nghị hướng dẫn triển khai, vận dụng chính sách",
+        "Kiến nghị các nội dung bất cập, mâu thuẫn trong chính sách",
+        "Kiến nghị khác",
+        "Kiến nghị bổ sung cơ chế phối hợp",
+      ];
+      const OFFICES = ["Văn phòng Bộ", "Vụ KHCN", "Cục Đổi mới sáng tạo", "Thanh tra Bộ"];
+      const CONTENT_TEMPLATES = [
+        "Đề nghị hướng dẫn chi tiết về quy trình phân bổ kinh phí cho nhiệm vụ khoa học và công nghệ cấp tỉnh.",
+        "Kiến nghị tháo gỡ vướng mắc trong việc áp dụng chính sách ưu đãi cho doanh nghiệp đổi mới sáng tạo.",
+        "Đề xuất làm rõ trách nhiệm phối hợp giữa các đơn vị trong triển khai đề án chuyển đổi số.",
+        "Kiến nghị cập nhật biểu mẫu và chuẩn hóa dữ liệu báo cáo định kỳ của địa phương.",
+      ];
+      const STATUS = ["status-purple", "status-blue", "status-orange", "status-red"];
+
+      function buildAllRows() {
+        const fixed = [
+          {
+            stt: 1, doiTuong: "SỞ KHCN TUYÊN QUANG",
+            noiDung: "1. Trường hợp 1: các Đồng chí Lãnh đạo, quản lý tại Sở Khoa học và Công nghệ...",
+            linhVuc: "Công tác tổng hợp",
+            loaiKienNghi: "Kiến nghị hướng dẫn triển khai, vận dụng chính sách",
+            donViTraLoi: "Văn phòng Bộ", status: "status-blue",
+          },
+          {
+            stt: 2, doiTuong: "SỞ KHCN NINH BÌNH",
+            noiDung: "1. Phân bổ và sử dụng kinh phí Ngân sách lĩnh vực khoa học, công nghệ, đổi mới...",
+            linhVuc: "Công tác tổng hợp",
+            loaiKienNghi: "Kiến nghị các nội dung bất cập, mâu thuẫn trong chính sách",
+            donViTraLoi: "Văn phòng Bộ", status: "status-blue",
+          },
+          {
+            stt: 3, doiTuong: "SỞ KHCN ĐĂKLĂK",
+            noiDung: "1. Việc bố trí ít nhất 3% tổng chi ngân sách hằng năm cho phát triển khoa học, công nghệ, đổi mới sáng...",
+            linhVuc: "Công tác tổng hợp",
+            loaiKienNghi: "Kiến nghị khác",
+            donViTraLoi: "Văn phòng Bộ", status: "status-blue",
+          },
+          {
+            stt: 4, doiTuong: "SỞ KHCN THÁI NGUYÊN",
+            noiDung: "Thực hiện Kế hoạch số 154/KH-UBND ngày 09/12/2025 của Ủy ban nhân dân tỉnh Thái Nguyên...",
+            linhVuc: "Công tác tổng hợp",
+            loaiKienNghi: "Kiến nghị hướng dẫn triển khai, vận dụng chính sách",
+            donViTraLoi: "Văn phòng Bộ", status: "status-blue",
+          },
+        ];
+        const dynamic = [];
+        for (let i = 5; i <= 77; i++) {
+          const idx = i - 1;
+          const s = i === 5 ? "status-red" : "status-blue";
+          dynamic.push({
+            stt: i,
+            doiTuong: DEPARTMENTS[idx % DEPARTMENTS.length],
+            noiDung: `${i}. ${CONTENT_TEMPLATES[idx % CONTENT_TEMPLATES.length]}`,
+            linhVuc: TOPICS[idx % TOPICS.length],
+            loaiKienNghi: REQUEST_TYPES[idx % REQUEST_TYPES.length],
+            donViTraLoi: OFFICES[idx % OFFICES.length],
+            status: s,
+            isNew: i === 5,
+          });
+        }
+        return [...fixed, ...dynamic];
+      }
+
+      const ALL_ROWS = buildAllRows();
+
+      /* ─── EXPORT CSV ────────────────────────────────────────── */
+      function exportCsv(rows) {
+        const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+        const header = ["STT","ĐỐI_TƯỢNG","NỘI_DUNG","LĨNH_VỰC","LOẠI_KIẾN_NGHỊ","ĐƠN_VỊ_TRẢ_LỜI"];
+        const lines  = [header.map(esc).join(",")];
+        rows.forEach((r) =>
+          lines.push([r.stt, r.doiTuong, r.noiDung, r.linhVuc, r.loaiKienNghi, r.donViTraLoi].map(esc).join(","))
+        );
+        const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement("a"), { href: url, download: "danh-sach-kien-nghi.csv" });
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+
+      /* ─── COMPONENTS ────────────────────────────────────────── */
+      function Sidebar() {
+        return (
+          <aside className="sidebar">
+            <div className="logo-circle">
+              <img src="image.png" alt="Logo Bộ KHCN" className="logo-image" />
+            </div>
+            <div className="nav-item">☰</div>
+            <div className="nav-item">◻</div>
+            <div className="nav-item">☷</div>
+            <div className="nav-item">◉</div>
+          </aside>
+        );
+      }
+
+      function TopHeader() {
+        return (
+          <header className="top-header">
+            <div className="search-wrap">
+              <span className="search-icon">☰</span>
+              <input type="text" defaultValue="Nội dung tìm kiếm (Nội dung kiến nghị)" readOnly />
+              <span className="search-icon">⌕</span>
+            </div>
+            <div className="notice-marquee">
+              <span>
+                LƯU Ý: 1. Đề nghị đổi mật khẩu để đảm bảo an toàn thông tin. 2.Mỗi kiến nghị gửi đến đơn vị trên hệ thống phải có nội dung cụ thể, đúng đối tượng. 3. Kiến nghị có thời hạn tối đa xử lý trong vòng 07 (bảy) ngày làm việc. Mọi thắc mắc vui lòng liên hệ Văn phòng Bộ. Điện thoại: 0962758686 - Email: tonghop@mic.gov.vn
+              </span>
+            </div>
+            <div className="user-wrap">
+              <span className="user-bell">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#39a4de" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </span>
+              <span className="user-avatar">
+                <svg width="34" height="34" viewBox="0 0 34 34">
+                  <circle cx="17" cy="17" r="17" fill="#39a4de"/>
+                  <circle cx="17" cy="13" r="5" fill="#fff"/>
+                  <path d="M5 30 Q5 22 17 22 Q29 22 29 30" fill="#fff"/>
+                </svg>
+              </span>
+              <span className="user-name">Nhân Viên Nguyễn Đức Mạnh</span>
+              <span className="user-caret">▼</span>
+            </div>
+          </header>
+        );
+      }
+
+      const STATUS_COLOR = {
+        "status-purple": "#7b1fa2",
+        "status-blue":   "#1e88e5",
+        "status-orange": "#ef6c00",
+        "status-red":    "#e53935",
+      };
+
+      function TableRow({ row }) {
+        const textColor = STATUS_COLOR[row.status] || "#1a7fc0";
+        return (
+          <tr style={{ color: textColor }}>
+            <td style={{ color: "#374151" }}>{row.stt}</td>
+            <td>{row.doiTuong}</td>
+            <td>
+              <div>{row.noiDung}</div>
+              {row.isNew && <span className="badge-new">Mới</span>}
+            </td>
+            <td>{row.linhVuc}</td>
+            <td>{row.loaiKienNghi}</td>
+            <td>{row.donViTraLoi}</td>
+          </tr>
+        );
+      }
+
+      function Pagination({ currentPage, totalPages, onPageChange }) {
+        const pages = useMemo(() => {
+          const max = 5;
+          let start = Math.max(1, currentPage - 2);
+          let end   = Math.min(totalPages, start + max - 1);
+          if (end - start < max - 1) start = Math.max(1, end - max + 1);
+          const arr = [];
+          for (let i = start; i <= end; i++) arr.push(i);
+          return arr;
+        }, [currentPage, totalPages]);
+
+        return (
+          <div className="page-wrap">
+            <span>Trang</span>
+            <button className="page-btn" onClick={() => onPageChange(p => Math.max(1, p - 1))} disabled={currentPage === 1}>‹</button>
+            {pages.map(p => (
+              <button key={p} className={`page-btn${p === currentPage ? " active-page" : ""}`} onClick={() => onPageChange(p)}>{p}</button>
+            ))}
+            <button className="page-btn" onClick={() => onPageChange(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>›</button>
+          </div>
+        );
+      }
+
+      function App() {
+        const [currentPage, setCurrentPage]   = useState(1);
+        const [rowsPerPage, setRowsPerPage]   = useState(10);
+        const [dateFrom,    setDateFrom]      = useState("01/01/2026");
+        const [dateTo,      setDateTo]        = useState("07/05/2026");
+
+        const totalPages    = Math.ceil(ALL_ROWS.length / rowsPerPage);
+        const paginatedRows = useMemo(() => {
+          const s = (currentPage - 1) * rowsPerPage;
+          return ALL_ROWS.slice(s, s + rowsPerPage);
+        }, [currentPage, rowsPerPage]);
+
+        const handlePerPage = (e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); };
+
+        return (
+          <div className="viewport">
+            <div className="app-layout">
+              <Sidebar />
+
+              <main className="main-panel">
+                <TopHeader />
+
+                <section className="content-card">
+                  <div className="section-title">⬅ Danh sách kiến nghị</div>
+
+                  <div className="table-card">
+                    <div className="table-heading">
+                      <h2 className="total-label">Tổng số kiến nghị: <span className="total-num">{ALL_ROWS.length}</span></h2>
+                      <ul className="legend">
+                        <li><span className="dot purple"></span>Đã trả lời nhưng chưa có phản hồi</li>
+                        <li><span className="dot blue"></span>Đã trả lời thỏa đáng</li>
+                        <li><span className="dot orange"></span>Cần được làm rõ nội dung trả lời</li>
+                        <li><span className="dot red"></span>Chưa trả lời</li>
+                      </ul>
+                    </div>
+
+                    <div className="table-scroll">
+                      <table>
+                        <colgroup>
+                          <col className="c1"/><col className="c2"/><col className="c3"/>
+                          <col className="c4"/><col className="c5"/><col className="c6"/>
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>STT</th>
+                            <th>ĐỐI TƯỢNG<br/>KIẾN NGHỊ <span className="f">☰</span></th>
+                            <th>NỘI DUNG KIẾN NGHỊ <span className="f">☰</span></th>
+                            <th>LĨNH VỰC <span className="f">☰</span></th>
+                            <th>LOẠI KIẾN<br/>NGHỊ <span className="f">☰</span></th>
+                            <th>ĐƠN VỊ THUỘC<br/>BỘ TRẢ LỜI <span className="f">☰</span></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedRows.map(row => <TableRow key={row.stt} row={row} />)}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button className="export-btn" onClick={() => exportCsv(ALL_ROWS)}>
+                      XUẤT FILE DANH SÁCH KIẾN NGHỊ
+                    </button>
+                  </div>
+
+                  {/* bottom bar — always pinned, never overflows */}
+                  <div className="bottom-bar">
+                    <div className="bottom-controls">
+                      <div className="display-mode">
+                        <span>Chế độ hiển thị:</span>
+                        <span>rút gọn</span>
+                        <span className="toggle"></span>
+                        <span>đầy đủ</span>
+                      </div>
+                      <div className="filter-box">
+                        <label>Từ ngày</label>
+                        <input type="text" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+                      </div>
+                      <div className="filter-box">
+                        <label>Đến ngày</label>
+                        <input type="text" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+                      </div>
+                      <button className="round-btn">+</button>
+                      <button className="round-btn">↺</button>
+                      <button className="search-btn">Tìm kiếm</button>
+                    </div>
+
+                    <div className="pagination-controls">
+                      <div className="per-page-wrap">
+                        <span>Bản ghi</span>
+                        <select className="per-page-select" value={rowsPerPage} onChange={handlePerPage}>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                    </div>
+                  </div>
+                </section>
+              </main>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
