@@ -1,0 +1,5 @@
+nginx.conf
+vercel.json
+docker-compose.yml
+.dockerignore
+*.md
